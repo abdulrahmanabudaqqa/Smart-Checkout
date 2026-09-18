@@ -1,0 +1,193 @@
+{% extends 'base.html' %}
+{% set active_page = "api_products" %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto space-y-6">
+  <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+    <div>
+      <h1 class="text-2xl font-bold text-slate-900">Product Catalog</h1>
+      <p class="text-slate-500 mt-1 text-sm">Live from <code class="bg-slate-100 px-1.5 py-0.5 rounded text-slate-700 font-mono text-xs">vectors/*.pkl</code> — the reference embeddings the matcher identifies scans against</p>
+    </div>
+    <div class="inline-flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-xl shadow-sm">
+      <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+      <span class="text-sm font-mono font-medium text-slate-600" id="catalog-meta">Loading catalog...</span>
+    </div>
+  </div>
+
+  <!-- زر الإضافة وشريط البحث بجانبه -->
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <a href="{{ url_for('add_scan_page') }}" class="inline-flex items-center gap-2 bg-primary-600 hover:bg-primary-700 text-white px-5 py-2.5 rounded-xl font-medium transition-all shadow-lg shadow-primary-500/20">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+      Add New Scan
+    </a>
+    
+    <div class="w-full sm:w-72">
+      <input type="text" id="search-input" oninput="handleSearch(this.value)" placeholder="Search company or product..." class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm focus:border-primary-500 focus:ring-2 focus:ring-primary-500/10 outline-none transition-all bg-white shadow-sm">
+    </div>
+  </div>
+
+  <div id="product-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5"></div>
+  <div id="empty-state" class="hidden text-center py-16 bg-white rounded-2xl border border-dashed border-slate-200">
+    <div class="text-4xl mb-3">📦</div>
+    <p class="text-slate-500 font-medium">No products found in the catalog.</p>
+  </div>
+</div>
+
+<script>
+  let allProducts = [];
+  let currentFolder = null;
+  let searchQuery = '';
+
+  async function loadProducts() {
+    try { 
+      const res = await fetch('/api/products'); 
+      const data = await res.json(); 
+      allProducts = data.products || [];
+      document.getElementById('catalog-meta').textContent = `${data.count} product${data.count === 1 ? '' : 's'} in catalog`;
+      renderView();
+    } catch (err) { 
+      document.getElementById('catalog-meta').textContent = 'Failed to load'; 
+    }
+  }
+
+  function handleSearch(query) {
+    searchQuery = query.toLowerCase().trim();
+    renderView();
+  }
+
+  function renderView() {
+    const grid = document.getElementById('product-grid');
+    const emptyState = document.getElementById('empty-state');
+    
+    if (allProducts.length === 0) {
+      grid.innerHTML = '';
+      emptyState.classList.remove('hidden');
+      return;
+    }
+    emptyState.classList.add('hidden');
+
+    const filteredProducts = allProducts.filter(p => {
+      const comp = (p.company || 'Uncategorized').toLowerCase();
+      const name = (p.name || '').toLowerCase();
+      const id = p.id.toLowerCase();
+      return comp.includes(searchQuery) || name.includes(searchQuery) || id.includes(searchQuery);
+    });
+
+    if (currentFolder === null) {
+      const companies = {};
+      filteredProducts.forEach(p => {
+        const comp = p.company || 'Uncategorized';
+        if (!companies[comp]) companies[comp] = 0;
+        companies[comp]++;
+      });
+
+      if (Object.keys(companies).length === 0) {
+        grid.innerHTML = `<div class="col-span-full text-center py-12 text-slate-400">No folders found matching "${searchQuery}"</div>`;
+        return;
+      }
+
+      grid.innerHTML = Object.keys(companies).map(company => `
+        <div onclick="openFolder('${company}')" class="bg-white rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-all cursor-pointer p-6 flex flex-col items-center justify-center gap-3 group">
+          <div class="text-6xl group-hover:scale-110 transition-transform duration-300">📁</div>
+          <div class="text-center">
+            <h3 class="font-bold text-slate-900">${company}</h3>
+            <p class="text-xs text-slate-500 mt-1">${companies[company]} Products</p>
+          </div>
+        </div>
+      `).join('');
+    } else {
+      const folderProducts = filteredProducts.filter(p => (p.company || 'Uncategorized') === currentFolder);
+      
+      let html = `
+        <div class="col-span-full mb-2 flex items-center justify-between">
+          <button onclick="openFolder(null)" class="text-sm font-semibold text-primary-600 hover:text-primary-700 flex items-center gap-1">
+            ← Back to Folders
+          </button>
+          <h2 class="text-xl font-bold text-slate-900">📁 ${currentFolder}</h2>
+        </div>
+      `;
+
+      if (folderProducts.length === 0) {
+        html += `<div class="col-span-full text-center py-12 text-slate-400">No products found matching "${searchQuery}" in this folder</div>`;
+      } else {
+        html += folderProducts.map(p => `
+          <div class="bg-white rounded-2xl border border-slate-100 shadow-sm hover:shadow-lg transition-all overflow-hidden group">
+            <div class="relative aspect-square bg-slate-50 overflow-hidden">
+              ${p.image_url ? `<img class="w-full h-full object-contain p-4" src="${p.image_url}" alt="Product ${p.id}">` : `<div class="w-full h-full flex items-center justify-center text-slate-400">No image</div>`}
+              <div class="absolute top-3 left-3 bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-lg"><span class="text-xs font-bold text-slate-900 font-mono">#${p.id}</span></div>
+              <button onclick="deleteProduct('${p.id}')" class="absolute top-3 right-3 w-8 h-8 bg-white/90 rounded-lg flex items-center justify-center text-red-600 opacity-0 group-hover:opacity-100 transition-all shadow-sm" title="Delete product">🗑️</button>
+            </div>
+            <div class="p-4 space-y-3">
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Company / Folder</label>
+                <input class="w-full px-3 py-1.5 rounded-lg border border-slate-200 text-sm focus:border-primary-500 outline-none" data-id="${p.id}" data-field="company" value="${p.company || 'Uncategorized'}" placeholder="Company Name">
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Display Name</label>
+                <input class="w-full px-3 py-1.5 rounded-lg border border-slate-200 text-sm focus:border-primary-500 outline-none" data-id="${p.id}" data-field="name" value="${p.name && p.name !== p.id ? p.name : ''}" placeholder="Product Name">
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Price</label>
+                <div class="flex gap-2">
+                  <input class="w-full px-3 py-1.5 rounded-lg border border-slate-200 text-sm font-mono focus:border-primary-500 outline-none" data-id="${p.id}" data-field="price" type="number" step="0.01" value="${p.price || ''}" placeholder="0.00">
+                  <button class="px-3 py-1.5 rounded-lg bg-slate-900 text-white text-sm font-semibold" data-id="${p.id}" type="button">Save</button>
+                </div>
+              </div>
+              <div class="text-xs min-h-[16px]" id="meta-status-${p.id}"></div>
+            </div>
+          </div>
+        `).join('');
+      }
+      
+      grid.innerHTML = html;
+
+      grid.querySelectorAll('[data-id][type="button"]').forEach(btn => {
+        btn.addEventListener('click', () => saveProductMeta(btn.dataset.id));
+      });
+    }
+  }
+
+  function openFolder(folderName) {
+    currentFolder = folderName;
+    renderView();
+  }
+
+  async function saveProductMeta(productId) {
+    const nameInput = document.querySelector(`input[data-id="${productId}"][data-field="name"]`);
+    const priceInput = document.querySelector(`input[data-id="${productId}"][data-field="price"]`);
+    const companyInput = document.querySelector(`input[data-id="${productId}"][data-field="company"]`);
+    const statusEl = document.getElementById(`meta-status-${productId}`);
+    
+    const body = {};
+    if (nameInput.value.trim()) body.name = nameInput.value.trim();
+    if (priceInput.value !== '') body.price = priceInput.value;
+    if (companyInput.value.trim()) body.company = companyInput.value.trim();
+    
+    statusEl.textContent = 'Saving...';
+    statusEl.className = 'text-xs text-slate-500';
+    try {
+      const res = await fetch(`/api/products/${productId}/meta`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      
+      statusEl.textContent = '✓ Saved';
+      statusEl.className = 'text-xs text-emerald-600 font-medium';
+      setTimeout(() => { statusEl.textContent = ''; }, 2000);
+      loadProducts();
+    } catch (err) { 
+      statusEl.textContent = 'Failed to save.'; 
+      statusEl.className = 'text-xs text-red-600'; 
+    }
+  }
+
+  async function deleteProduct(productId) {
+    if (!confirm(`Are you sure you want to delete Product #${productId}?`)) return;
+    try {
+      const res = await fetch(`/api/products/${productId}/delete`, { method: 'POST' });
+      if (res.ok) loadProducts();
+    } catch (err) { alert('Network error'); }
+  }
+
+  loadProducts();
+</script>
+{% endblock %}

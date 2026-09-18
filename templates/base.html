@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}Smart Checkout Monitoring{% endblock %}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            primary: { 50: '#eef2ff', 100: '#e0e7ff', 500: '#6366f1', 600: '#4f46e5', 700: '#4338ca' }
+          }
+        }
+      }
+    }
+  </script>
+  {% block styles %}{% endblock %}
+</head>
+<body class="bg-slate-50 text-slate-900 font-sans antialiased">
+  
+  {% if current_user.is_authenticated %}
+  <!-- Mobile Header (يظهر فقط للمسجلين) -->
+  <div class="lg:hidden flex items-center justify-between p-4 bg-white border-b border-slate-200 sticky top-0 z-50">
+    <div class="flex items-center gap-2">
+      <div class="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center text-white font-bold text-sm">AI</div>
+      <span class="font-bold text-slate-800">Smart Checkout</span>
+    </div>
+    <button id="mobile-menu-btn" class="p-2 text-slate-600 hover:bg-slate-100 rounded-lg">
+      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+    </button>
+  </div>
+  {% endif %}
+
+  <div class="flex min-h-screen">
+    
+    {% if current_user.is_authenticated %}
+    <!-- Sidebar (يظهر فقط للمسجلين) -->
+    <aside id="sidebar" class="fixed inset-y-0 left-0 z-40 w-64 bg-white border-r border-slate-200 transform -translate-x-full lg:translate-x-0 transition-transform duration-200 ease-in-out flex flex-col">
+      <div class="p-6 border-b border-slate-100">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 bg-primary-600 rounded-xl flex items-center justify-center text-white font-bold shadow-lg shadow-primary-500/30">AI</div>
+          <div>
+            <h1 class="font-bold text-lg text-slate-900 leading-tight">Smart Checkout</h1>
+            <p class="text-xs text-slate-500 font-medium">OS v2.0</p>
+          </div>
+        </div>
+      </div>
+
+      <nav class="flex-1 p-4 space-y-1 overflow-y-auto">
+        {% set nav_items = [
+          ('dashboard', 'Dashboard', '📊', ['manager', 'admin']),
+          ('livecart_page', 'Live Cart', '🛒', ['cashier', 'manager', 'admin']),
+          ('products_page', 'Products', '📦', ['manager', 'admin']),
+          ('forecast_page', 'Forecast', '📈', ['manager', 'admin'])
+        ] %}
+        
+        {% for id, label, icon, allowed_roles in nav_items %}
+          {% if current_user.role in allowed_roles %}
+            <a href="{{ url_for(id) }}" class="flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 {% if active_page == id %}bg-primary-50 text-primary-700 shadow-sm{% else %}text-slate-600 hover:bg-slate-50 hover:text-slate-900{% endif %}">
+              <span class="text-lg">{{ icon }}</span> {{ label }}
+            </a>
+          {% endif %}
+        {% endfor %}
+        
+        {% if current_user.role == 'admin' %}
+          <a href="{{ url_for('admin') }}" class="flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 {% if active_page == 'admin' %}bg-primary-50 text-primary-700 shadow-sm{% else %}text-slate-600 hover:bg-slate-50 hover:text-slate-900{% endif %}">
+            <span class="text-lg">⚙️</span> Admin
+          </a>
+        {% endif %}
+      </nav>
+
+      <div class="p-4 border-t border-slate-100">
+        <div class="flex items-center gap-3 px-4 py-3 bg-slate-50 rounded-xl">
+          <div class="w-8 h-8 rounded-full bg-primary-100 text-primary-700 flex items-center justify-center font-bold text-xs">
+            {{ current_user.username[:2]|upper }}
+          </div>
+          <div class="flex-1 min-w-0">
+            <p class="text-sm font-semibold text-slate-900 truncate">
+              {{ current_user.username }}
+            </p>
+            <p class="text-xs text-slate-500 capitalize">
+              {{ current_user.role }}
+            </p>
+          </div>
+          
+          <a href="{{ url_for('logout') }}" class="text-slate-400 hover:text-red-600 transition-colors" title="Logout">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
+          </a>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Overlay for mobile sidebar -->
+    <div id="sidebar-overlay" class="fixed inset-0 bg-black/50 z-30 hidden lg:hidden backdrop-blur-sm"></div>
+    {% endif %}
+
+    <!-- Main Content (تعديل الهامش الجانبي ليظهر فقط للمسجلين) -->
+    <main class="flex-1 {% if current_user.is_authenticated %}lg:ml-64{% endif %} p-4 lg:p-8 max-w-[1600px] mx-auto w-full">
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+
+  <script>
+    const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebar-overlay');
+    function toggleSidebar() {
+      if (sidebar && overlay) {
+        sidebar.classList.toggle('-translate-x-full');
+        overlay.classList.toggle('hidden');
+      }
+    }
+    if (mobileMenuBtn) {
+      mobileMenuBtn.addEventListener('click', toggleSidebar);
+      overlay.addEventListener('click', toggleSidebar);
+    }
+  </script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

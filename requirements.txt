@@ -1,0 +1,9 @@
+flask>=3.0
+flask-login>=0.6
+requests>=2.31
+ultralytics>=8.3
+torch>=2.2
+torchvision>=0.17
+opencv-python-headless>=4.9
+pillow>=10.0
+numpy>=1.26

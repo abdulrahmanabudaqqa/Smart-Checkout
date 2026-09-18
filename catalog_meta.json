@@ -1,0 +1,118 @@
+{
+  "002": {
+    "company": "Uncategorized",
+    "price": 1.5,
+    "name": "Strawberry Milk"
+  },
+  "003": {
+    "company": "Uncategorized",
+    "price": 1.0,
+    "name": "Vanilla"
+  },
+  "005": {
+    "company": "Almarai",
+    "price": 1.0,
+    "name": "Chocolate"
+  },
+  "018": {
+    "price": 0.5,
+    "name": "STIX",
+    "company": "Uncategorized"
+  },
+  "007": {
+    "price": 1.0,
+    "company": "Uncategorized",
+    "name": "baja"
+  },
+  "052": {
+    "company": "Uncategorized",
+    "price": 0.4,
+    "name": "Chocolate Milk"
+  },
+  "053": {
+    "company": "Almarai"
+  },
+  "014": {
+    "name": "ICE TEA peach",
+    "company": "Uncategorized"
+  },
+  "006": {
+    "company": "Deemah"
+  },
+  "008": {
+    "company": "Uncategorized",
+    "price": 0.5,
+    "name": "Double Chocolate Muffin"
+  },
+  "001": {
+    "company": "Uncategorized",
+    "name": "Pure Honey"
+  },
+  "010": {
+    "name": "Latte",
+    "company": "Uncategorized"
+  },
+  "019": {
+    "company": "Uncategorized"
+  },
+  "011": {
+    "company": "Uncategorized",
+    "price": 0.7,
+    "name": "molto"
+  },
+  "022": {
+    "company": "Uncategorized",
+    "price": 0.19,
+    "name": "chocolate cupcake"
+  },
+  "004": {
+    "company": "Uncategorized"
+  },
+  "012": {
+    "company": "Uncategorized",
+    "price": 0.6,
+    "name": "deemah hszeinut"
+  },
+  "044": {
+    "price": 0.3,
+    "name": "halls",
+    "company": "Uncategorized"
+  },
+  "034": {
+    "price": 0.4,
+    "name": "mentos",
+    "company": "Uncategorized"
+  },
+  "028": {
+    "company": "Break"
+  },
+  "027": {
+    "company": "Uncategorized"
+  },
+  "042": {
+    "company": "Uncategorized"
+  },
+  "009": {
+    "company": "Ss"
+  },
+  "039": {
+    "price": 0.35,
+    "company": "Uncategorized",
+    "name": "Jordina Vienna"
+  },
+  "035": {
+    "price": 0.25,
+    "name": "mentos chewy candy",
+    "company": "Uncategorized"
+  },
+  "048": {
+    "price": 0.6,
+    "name": "Sun top mango",
+    "company": "Uncategorized"
+  },
+  "025": {
+    "name": "Mr. Tortilla flame carnaval",
+    "company": "Uncategorized",
+    "price": 0.25
+  }
+}

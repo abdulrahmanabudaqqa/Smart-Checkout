@@ -1,0 +1,365 @@
+{% extends 'base.html' %}
+{% set active_page = "dashboard" %}
+
+{% block content %}
+<div class="space-y-6">
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div>
+      <h1 class="text-2xl font-bold text-slate-900">Dashboard</h1>
+      <p class="text-slate-500 mt-1">Real-time checkout monitoring and model performance</p>
+    </div>
+    <div class="flex items-center gap-2 px-4 py-2 bg-emerald-50 text-emerald-700 rounded-full border border-emerald-100 w-fit">
+      <span class="relative flex h-2.5 w-2.5">
+        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+        <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+      </span>
+      <span class="text-sm font-semibold">System Online</span>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
+      <div class="text-sm font-medium text-slate-500 mb-1">Overall Accuracy</div>
+      <div class="text-3xl font-bold text-slate-900 font-mono" id="kpi-overall-accuracy">--%</div>
+      <div class="text-xs text-slate-400 mt-2" id="kpi-overall-accuracy-trend">Awaiting scans</div>
+    </div>
+    <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
+      <div class="text-sm font-medium text-slate-500 mb-1">Last Scan Confidence</div>
+      <div class="text-3xl font-bold text-slate-900 font-mono" id="kpi-last-confidence">--%</div>
+      <div class="text-xs text-slate-400 mt-2" id="kpi-last-confidence-trend">No scans yet</div>
+    </div>
+    <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
+      <div class="text-sm font-medium text-slate-500 mb-1">Inference Speed</div>
+      <div class="text-3xl font-bold text-slate-900 font-mono" id="kpi-inference-speed">--ms</div>
+      <div class="text-xs text-slate-400 mt-2">Real-time latency</div>
+    </div>
+    <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
+      <div class="text-sm font-medium text-slate-500 mb-1">Unique Products</div>
+      <div class="text-3xl font-bold text-slate-900 font-mono" id="kpi-unique-products">0</div>
+      <div class="text-xs text-slate-400 mt-2">Distinct items detected</div>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
+      <div class="text-sm font-medium text-slate-500 mb-1">Scans Today</div>
+      <div class="text-2xl font-bold text-slate-900 font-mono" id="kpi-scans-today">0</div>
+    </div>
+    <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
+      <div class="text-sm font-medium text-slate-500 mb-1">Avg Basket Size</div>
+      <div class="text-2xl font-bold text-slate-900 font-mono" id="kpi-basket-size">--</div>
+    </div>
+    <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
+      <div class="text-sm font-medium text-slate-500 mb-1">Revenue Today</div>
+      <div class="text-2xl font-bold text-emerald-600 font-mono" id="kpi-revenue-today">$0.00</div>
+    </div>
+    <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
+      <div class="text-sm font-medium text-slate-500 mb-1">Transactions</div>
+      <div class="text-2xl font-bold text-slate-900 font-mono" id="kpi-transactions-today">0</div>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+    <div class="xl:col-span-2 bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+      <div class="p-5 border-b border-slate-100 flex items-center justify-between">
+        <h2 class="font-semibold text-slate-900 flex items-center gap-2"><span>📷</span> Live Camera Desk Stream</h2>
+      </div>
+      <div class="relative aspect-video bg-slate-900 flex items-center justify-center">
+        {% if camera_connected %}
+          <img src="{{ url_for('video_feed') }}" alt="Live phone camera stream" class="absolute inset-0 w-full h-full object-cover">
+        {% else %}
+          <div class="text-center p-8">
+            <div class="w-16 h-16 bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">📷</div>
+            <p class="text-slate-400 mb-4">Camera is currently disconnected</p>
+            <a href="/livecart" class="inline-flex items-center gap-2 bg-primary-600 hover:bg-primary-700 text-white px-5 py-2.5 rounded-xl font-medium transition-colors">Connect Camera in Live Cart</a>
+          </div>
+        {% endif %}
+        <div class="absolute top-4 left-4 right-4 flex justify-between pointer-events-none">
+          <span class="px-3 py-1.5 bg-black/60 backdrop-blur-md text-white text-xs font-mono rounded-lg border border-white/10">{{ "Phone Camera" if camera_connected else "Camera" }}</span>
+          <span class="px-3 py-1.5 bg-black/60 backdrop-blur-md text-emerald-400 text-xs font-mono rounded-lg border border-white/10 flex items-center gap-2">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> {{ "AI INFERENCE ACTIVE" if camera_connected else "AI INFERENCE IDLE" }}
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <div class="space-y-6">
+      <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
+        <h3 class="font-semibold text-slate-900 mb-4">Model Diagnostics</h3>
+        <div class="text-center py-4">
+          <div class="text-4xl font-bold text-slate-900 font-mono" id="gauge-accuracy-value">--%</div>
+          <div class="text-sm text-slate-500 mt-1">Current Accuracy Baseline</div>
+          <div class="w-full bg-slate-100 rounded-full h-2.5 mt-4 overflow-hidden">
+            <div class="bg-primary-600 h-2.5 rounded-full transition-all duration-500" id="accuracy-progress-fill" style="width: 0%"></div>
+          </div>
+          <div class="flex justify-between text-xs text-slate-400 mt-2 font-mono"><span>0%</span><span>Target: 95%</span><span>100%</span></div>
+        </div>
+        <div class="border-t border-slate-100 pt-4 mt-4 space-y-2">
+          <div class="flex justify-between text-sm"><span class="text-slate-500">High Confidence (>90%):</span><span class="font-semibold text-slate-900 font-mono" id="stat-high-confidence">--%</span></div>
+          <div class="flex justify-between text-sm"><span class="text-slate-500">Low Confidence (<80%):</span><span class="font-semibold text-amber-600 font-mono" id="stat-low-confidence">--%</span></div>
+        </div>
+      </div>
+      <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
+        <h3 class="font-semibold text-slate-900 mb-4">Model Alerts</h3>
+        <div class="space-y-3" id="alert-list">
+          <div class="text-sm text-slate-400 text-center py-4">No alerts yet — waiting on scan data.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+    <div class="p-5 border-b border-slate-100"><h2 class="font-semibold text-slate-900" id="last-scan-title">Last Scan Results</h2></div>
+    <div class="divide-y divide-slate-100" id="last-scan-list">
+      <div class="text-center text-slate-400 py-8 text-sm">No scans yet — run a scan to see live results here.</div>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
+      <h3 class="font-semibold text-slate-900 mb-1">📊 Revenue Trend (7 Days)</h3>
+      <div class="text-2xl font-bold text-slate-900 font-mono mb-1" id="chart-revenue-total">$0.00</div>
+      <div class="text-xs text-slate-500 mb-4">Total across the last 7 days</div>
+      <div id="chart-revenue-container"></div>
+    </div>
+    <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
+      <h3 class="font-semibold text-slate-900 mb-1">📈 Scan Activity (24h)</h3>
+      <div class="text-2xl font-bold text-slate-900 font-mono mb-1" id="chart-activity-total">0</div>
+      <div class="text-xs text-slate-500 mb-4">Items detected per hour</div>
+      <div id="chart-activity-container"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function fmtPct(value) { return (value === null || value === undefined) ? '--%' : value.toFixed(1) + '%'; }
+  function fmtMoney(value) { return (value === null || value === undefined) ? '$0.00' : '$' + value.toFixed(2); }
+  function fmtMs(value) { return (value === null || value === undefined) ? '--ms' : Math.round(value) + 'ms'; }
+  function badgeClass(accuracy) {
+    if (accuracy === null || accuracy === undefined) return 'bg-amber-50 text-amber-700 border border-amber-100';
+    if (accuracy >= 90) return 'bg-emerald-50 text-emerald-700 border border-emerald-100';
+    if (accuracy >= 80) return 'bg-amber-50 text-amber-700 border border-amber-100';
+    return 'bg-red-50 text-red-700 border border-red-100';
+  }
+  function scoreClass(confidencePct) {
+    if (confidencePct >= 90) return 'text-emerald-600';
+    if (confidencePct >= 80) return 'text-amber-600';
+    return 'text-red-600';
+  }
+
+  function svgBarChart(labels, values, color) {
+    const w = 300, h = 110, padTop = 8, padBottom = 18, padSide = 6;
+    const max = Math.max(...values, 1);
+    const innerW = w - padSide * 2;
+    const gap = innerW / values.length;
+    const barWidth = Math.max(6, gap * 0.55);
+    let bars = '';
+    values.forEach((v, i) => {
+      const barHeight = (v / max) * (h - padTop - padBottom);
+      const x = padSide + i * gap + (gap - barWidth) / 2;
+      const y = h - padBottom - barHeight;
+      bars += `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${barWidth.toFixed(1)}" height="${Math.max(barHeight, 1).toFixed(1)}" rx="3" style="fill:${color};"></rect>`;
+    });
+    let tickLabels = '';
+    labels.forEach((l, i) => {
+      const x = padSide + i * gap + gap / 2;
+      tickLabels += `<text x="${x.toFixed(1)}" y="${h - 4}" text-anchor="middle" font-size="9" style="fill:#94a3b8;">${l}</text>`;
+    });
+    return `<svg viewBox="0 0 ${w} ${h}" style="width:100%; height:${h}px; display:block;">${bars}${tickLabels}</svg>`;
+  }
+
+  function svgLineChart(labels, values, color, opts) {
+    opts = opts || {};
+    const w = 300, h = 100, padTop = 10, padBottom = 18, padSide = 6;
+    const cleanValues = values.map(v => (v === null || v === undefined) ? 0 : v);
+    const max = Math.max(...cleanValues, opts.minMax || 1);
+    const min = opts.zeroFloor === false ? Math.min(...cleanValues) : 0;
+    const range = (max - min) || 1;
+    const innerW = w - padSide * 2;
+    const stepX = values.length > 1 ? innerW / (values.length - 1) : 0;
+    const points = cleanValues.map((v, i) => {
+      const x = padSide + i * stepX;
+      const y = h - padBottom - ((v - min) / range) * (h - padTop - padBottom);
+      return [x, y];
+    });
+    const polyline = points.map(p => p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ');
+    let area = '';
+    if (opts.area) {
+      const areaPath = `M${points[0][0].toFixed(1)},${(h - padBottom).toFixed(1)} L` + points.map(p => p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' L') + ` L${points[points.length - 1][0].toFixed(1)},${(h - padBottom).toFixed(1)} Z`;
+      area = `<path d="${areaPath}" style="fill:${color}; opacity:0.14;"></path>`;
+    }
+    let dots = '';
+    if (opts.dots) {
+      dots = points.map((p, i) => values[i] === null ? '' : `<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="2.5" style="fill:${color};"></circle>`).join('');
+    }
+    let tickLabels = '';
+    labels.forEach((l, i) => {
+      if (labels.length > 10 && i % Math.ceil(labels.length / 8) !== 0) return;
+      tickLabels += `<text x="${points[i][0].toFixed(1)}" y="${h - 4}" text-anchor="middle" font-size="9" style="fill:#94a3b8;">${l}</text>`;
+    });
+    return `<svg viewBox="0 0 ${w} ${h}" style="width:100%; height:${h}px; display:block;">${area}<polyline points="${polyline}" style="fill:none; stroke:${color}; stroke-width:2;"></polyline>${dots}${tickLabels}</svg>`;
+  }
+
+  function renderHBarChart(containerId, items, opts) {
+    opts = opts || {};
+    const container = document.getElementById(containerId);
+    if (!items || items.length === 0) {
+      container.innerHTML = `<div class="text-center text-slate-400 py-4 text-sm">${opts.emptyText || 'No data yet'}</div>`;
+      return;
+    }
+    const max = Math.max(...items.map(i => i.value), 1);
+    container.innerHTML = items.map(i => `
+      <div class="mb-3 last:mb-0">
+        <div class="flex justify-between text-xs mb-1"><span class="font-medium text-slate-700">${i.label}</span><span class="text-slate-500 font-mono font-semibold">${i.display}</span></div>
+        <div class="w-full bg-slate-100 rounded-full h-2 overflow-hidden"><div class="bg-emerald-500 h-2 rounded-full transition-all duration-500" style="width:${(i.value / max * 100).toFixed(1)}%;"></div></div>
+      </div>
+    `).join('');
+  }
+
+  function renderTrendCharts(ts) {
+    const revContainer = document.getElementById('chart-revenue-container');
+    const actContainer = document.getElementById('chart-activity-container');
+    const confContainer = document.getElementById('chart-confidence-container');
+    if (!ts.has_data) {
+      revContainer.innerHTML = '<div class="text-center text-slate-400 py-4 text-sm">No scans yet</div>';
+      actContainer.innerHTML = '<div class="text-center text-slate-400 py-4 text-sm">No scans yet</div>';
+      confContainer.innerHTML = '<div class="text-center text-slate-400 py-4 text-sm">No scans yet</div>';
+      return;
+    }
+    const dailyRevenueTotal = ts.daily.revenue.reduce((a, b) => a + b, 0);
+    document.getElementById('chart-revenue-total').textContent = fmtMoney(dailyRevenueTotal);
+    revContainer.innerHTML = svgBarChart(ts.daily.labels, ts.daily.revenue, '#4f46e5');
+    const hourlyScanTotal = ts.hourly.scans.reduce((a, b) => a + b, 0);
+    document.getElementById('chart-activity-total').textContent = hourlyScanTotal.toLocaleString();
+    actContainer.innerHTML = svgLineChart(ts.hourly.labels, ts.hourly.scans, '#10b981', { area: true });
+    confContainer.innerHTML = svgLineChart(ts.daily.labels, ts.daily.avg_confidence, '#f59e0b', { dots: true, minMax: 100, zeroFloor: false });
+  }
+
+  function renderTopRevenue(topProducts) {
+    const items = (topProducts || []).map(p => ({ label: p.name, value: p.revenue, display: fmtMoney(p.revenue) }));
+    renderHBarChart('chart-top-revenue-container', items, { emptyText: 'No completed transactions yet — use Pay in Live Cart' });
+  }
+
+  async function refreshTimeseries() {
+    let ts;
+    try { const res = await fetch('/api/timeseries'); ts = await res.json(); } catch (err) { return; }
+    renderTrendCharts(ts);
+  }
+
+  function renderLastScan(items) {
+    const list = document.getElementById('last-scan-list');
+    const title = document.getElementById('last-scan-title');
+    if (!items || items.length === 0) {
+      list.innerHTML = '<div class="text-center text-slate-400 py-8 text-sm">No scans yet — run a scan to see live results here.</div>';
+      title.textContent = 'Last Scan Results';
+      return;
+    }
+    const total = items.reduce((sum, i) => sum + (i.price || 0), 0);
+    title.textContent = `Last Scan Results (${items.length} item${items.length === 1 ? '' : 's'}, ${fmtMoney(total)})`;
+    list.innerHTML = items.map(item => {
+      const confPct = item.confidence * 100;
+      return `
+        <div class="flex items-center justify-between p-4 hover:bg-slate-50 transition-colors">
+          <div class="flex items-center gap-3">
+            <img class="w-10 h-10 rounded-lg object-cover bg-slate-100" src="${item.image_url}" alt="${item.name}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+            <div class="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center text-lg hidden">📦</div>
+            <div>
+              <div class="font-semibold text-sm text-slate-900">${item.name}</div>
+              <div class="text-xs text-slate-500">ID: ${item.product_id}${item.price ? ' | ' + fmtMoney(item.price) : ' | Price not set'}</div>
+            </div>
+          </div>
+          <div class="text-right">
+            <div class="font-mono font-semibold text-sm ${scoreClass(confPct)}">${confPct.toFixed(1)}%</div>
+            <div class="text-xs text-slate-500">${confPct >= 90 ? 'High Confidence' : confPct >= 80 ? 'Medium Confidence' : 'Attention Required'}</div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function renderTelemetry(events) {
+    const log = document.getElementById('telemetry-log');
+    if (!log) return;
+    if (!events || events.length === 0) { log.innerHTML = '<div class="text-slate-400">Waiting for activity...</div>'; return; }
+    log.innerHTML = events.map(e => `<div class="text-xs font-mono text-slate-600"><span class="text-slate-400">[${e.time}]</span> ${e.message}</div>`).join('');
+  }
+
+  function renderProductTable(products) {
+    const body = document.getElementById('product-performance-body');
+    if (!body) return;
+    if (!products || products.length === 0) {
+      body.innerHTML = '<tr><td colspan="3" class="text-center text-slate-400 py-4">No scans yet</td></tr>';
+      return;
+    }
+    body.innerHTML = products.map(p => `
+      <tr class="border-b border-slate-50 last:border-0">
+        <td class="py-3 px-4 text-sm font-medium text-slate-900">${p.name}</td>
+        <td class="py-3 px-4 text-sm text-slate-600 font-mono">${p.scans}</td>
+        <td class="py-3 px-4"><span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${badgeClass(p.accuracy)}">${fmtPct(p.accuracy)}</span></td>
+      </tr>
+    `).join('');
+  }
+
+  function renderModelAlerts(stats) {
+    const list = document.getElementById('alert-list');
+    const alerts = [];
+    if (stats && stats.products) {
+      stats.products.forEach(p => {
+        if (p.accuracy !== null && p.accuracy !== undefined && p.accuracy < 80) {
+          alerts.push({ level: 'danger', icon: '⚠️', text: `${p.name} has low detection confidence (${p.accuracy.toFixed(1)}%) — may need more training images.` });
+        }
+      });
+    }
+    if (alerts.length === 0) {
+      list.innerHTML = '<div class="text-sm text-slate-400 text-center py-4">No alerts right now — everything looks steady.</div>';
+      return;
+    }
+    list.innerHTML = alerts.slice(0, 6).map(a => `
+      <div class="flex gap-3 p-3 rounded-xl bg-red-50 border border-red-100 text-sm text-red-700">
+        <span class="flex-shrink-0">${a.icon}</span>
+        <span>${a.text}</span>
+      </div>
+    `).join('');
+  }
+
+  async function refreshStats() {
+    let data;
+    try { const res = await fetch('/stats'); data = await res.json(); } catch (err) { return; }
+    renderModelAlerts(data);
+    document.getElementById('kpi-overall-accuracy').textContent = fmtPct(data.overall_accuracy);
+    document.getElementById('kpi-overall-accuracy-trend').textContent = data.has_data ? `Based on ${data.scans_today} scan${data.scans_today === 1 ? '' : 's'}` : 'Awaiting scans';
+    document.getElementById('kpi-last-confidence').textContent = fmtPct(data.last_scan_confidence);
+    document.getElementById('kpi-last-confidence-trend').textContent = data.last_scan_confidence !== null ? 'Most recent scan' : 'No scans yet';
+    document.getElementById('kpi-inference-speed').textContent = fmtMs(data.inference_speed_ms);
+    document.getElementById('kpi-scans-today').textContent = data.scans_today.toLocaleString();
+    document.getElementById('kpi-revenue-today').textContent = fmtMoney(data.revenue_today);
+    document.getElementById('kpi-basket-size').textContent = (data.avg_basket_size === null || data.avg_basket_size === undefined) ? '--' : data.avg_basket_size;
+    document.getElementById('kpi-transactions-today').textContent = (data.transactions_today || 0).toLocaleString();
+    document.getElementById('kpi-unique-products').textContent = (data.unique_products_scanned || 0).toLocaleString();
+    document.getElementById('gauge-accuracy-value').textContent = fmtPct(data.overall_accuracy);
+    document.getElementById('accuracy-progress-fill').style.width = (data.overall_accuracy || 0) + '%';
+    document.getElementById('stat-high-confidence').textContent = fmtPct(data.high_confidence_pct);
+    document.getElementById('stat-low-confidence').textContent = fmtPct(data.low_confidence_pct);
+    renderProductTable(data.products);
+    renderTopRevenue(data.top_products_by_revenue);
+    renderLastScan(data.last_scan_items);
+    renderTelemetry(data.events);
+  }
+
+  async function refreshCatalogSize() {
+    try {
+      const res = await fetch('/api/products');
+      const data = await res.json();
+      const el = document.getElementById('kpi-catalog-size');
+      if (el) el.textContent = (data.count || 0).toLocaleString();
+    } catch (err) {}
+  }
+
+  refreshStats();
+  refreshTimeseries();
+  refreshCatalogSize();
+  setInterval(refreshStats, 5000);
+  setInterval(refreshTimeseries, 15000);
+  setInterval(refreshCatalogSize, 60000);
+</script>
+{% endblock %}

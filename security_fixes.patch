@@ -1,0 +1,78 @@
+diff --git a/app.py b/app.py
+index e69de29..d95f3ad 100644
+--- a/app.py
++++ b/app.py
+@@ -1,4 +1,5 @@
+ import os
++import secrets
+ import pickle
+ import uuid
+ from pathlib import Path
+@@ -19,6 +20,10 @@ import db
+ import auth
+ from auth import admin_required, manager_or_admin_required
+ 
+ app = Flask(__name__)
++app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024   # 16 MB max upload
++if not app.config.get("SECRET_KEY"):
++    app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", secrets.token_hex(32))
++
+ ALLOWED_EXTS = {".jpg", ".jpeg", ".png", ".webp"}
+ UPLOAD_DIR = Path(__file__).parent / "uploads"
+@@ -178,5 +183,10 @@ if __name__ == "__main__":
+     # missing model files fail fast instead of on first upload.
+     get_pipeline()
+-    app.run(debug=True, threaded=True)
++    debug_mode = os.environ.get("FLASK_DEBUG", "false").lower() in ("true", "1", "yes")
++    host = os.environ.get("FLASK_HOST", "0.0.0.0")
++    port = int(os.environ.get("FLASK_PORT", 5000))
++
++    app.run(debug=debug_mode, threaded=True, host=host, port=port)
+diff --git a/auth.py b/auth.py
+index e69de29..d95f3ad 100644
+--- a/auth.py
++++ b/auth.py
+@@ -1,4 +1,6 @@
++import os
+ import sqlite3
++import secrets
+ import threading
+ from functools import wraps
+@@ -41,14 +43,20 @@ def init_db():
+         conn.commit()
+         row = conn.execute("SELECT COUNT(*) AS c FROM users").fetchone()
+         if row["c"] == 0:
++            initial_password = os.environ.get("INITIAL_ADMIN_PASSWORD")
++            if not initial_password:
++                initial_password = secrets.token_urlsafe(16)
++
+             conn.execute(
+                 "INSERT INTO users (username, email, password_hash, role) VALUES (?, ?, ?, ?)",
+-                ("admin", "admin@scandesk.local", generate_password_hash("admin123"), "admin"),
++                ("admin", "admin@scandesk.local", generate_password_hash(initial_password), "admin"),
+             )
+             conn.commit()
+             print(
+-                "[auth] no users found -- seeded default account "
+-                "admin / admin123 (change this password immediately)."
++                f"[auth] First run detected — default admin account created.\n"
++                f"[auth] Username : admin\n"
++                f"[auth] Password : {initial_password}\n"
++                f"[auth] ⚠️  Save this password NOW. It will not be shown again."
+             )
+diff --git a/camera.py b/camera.py
+index e69de29..d95f3ad 100644
+--- a/camera.py
++++ b/camera.py
+@@ -1,6 +1,9 @@
++import os
+ import cv2
+ 
+ # Replace with the IP and port shown in your DroidCam app
+-DROIDCAM_URL = "http://192.168.31.66:4747/video"
++DROIDCAM_URL = os.environ.get(
++    "CAMERA_URL",
++    "http://YOUR_PHONE_IP:4747/video"
++)
+ 
+ cap = cv2.VideoCapture(DROIDCAM_URL)
