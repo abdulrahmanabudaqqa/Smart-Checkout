@@ -40,6 +40,10 @@ A built-in forecasting tool that analyzes recent scan volumes to predict future 
 An admin panel to manage staff accounts, ensuring that cashiers, managers, and admins only have access to their respective modules.
 ![Admin Panel](images/07-admin-users-panel.png)
 
+### 6. Secure Authentication
+A clean and secure login gateway verifying credentials and routing staff to their designated dashboards based on their assigned roles.
+![Login Page](images/08-login-page.png)
+
 ---
 
 ## How to Run (Installation & Setup)
